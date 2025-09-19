@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def gaussian2D(radius, mu):
@@ -33,3 +34,38 @@ def make_psf_image(data_image, centroid_x, centroid_y, psf_mu):
 # need a function to assess the quality of the PSF subtraction
 ## idea: make a stamp cutout around the data image, subtract the PSF image 
 ##       made from `make_psf_image`, subtract/calculate chi2?
+
+def second_moment(image_cutout, centroid_x, centroid_y, start_x, start_y):
+    """
+    calculate the second moment of an image cutout around a centroid position
+    """
+    x_size, y_size = image_cutout.shape
+    xx, yy = np.meshgrid(np.arange(start_x, start_x + x_size),
+                         np.arange(start_y, start_y + y_size))
+    x_width = np.sqrt(np.sum((image_cutout*(xx - centroid_x))**2))/np.sqrt(np.sum(image_cutout**2))
+    y_width = np.sqrt(np.sum((image_cutout*(yy - centroid_y))**2))/np.sqrt(np.sum(image_cutout**2))
+    return (x_width, y_width)
+
+def find_best_second_moment(centroid_xs, centroid_ys, img_data):
+    """
+    find the second moment at every centroid position provided, and return the 
+    approximate most common value - this is a good value for the PSF mu
+    """
+    moments_x = []
+    moments_y = []
+    for peak_x, peak_y in zip(centroid_xs, centroid_ys):
+        image_cutout = img_data[(peak_x - 5):(peak_x + 5), (peak_y - 5):(peak_y + 5)]
+        start_x = int(peak_x - 5)
+        start_y = int(peak_y - 5)
+        
+        moment_x, moment_y = second_moment(image_cutout, peak_x, peak_y, start_x, start_y)
+        moments_x.append(moment_x)
+        moments_y.append(moment_y)
+    moments_sq = np.sqrt(np.array(moments_x)**2 + np.array(moments_y)**2)
+
+    _ = plt.hist(moments_sq, bins=40)
+    # identify the bin with the most counts, what is the value
+    best_moment = _[1][np.where(_[0] == np.max(_[0]))[0]]
+
+    return best_moment
+
