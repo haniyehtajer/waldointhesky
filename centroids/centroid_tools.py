@@ -2,6 +2,9 @@ import numpy as np
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian2DKernel
 
+
+ # example usage  peak_x_values, peak_y_values, convolved_image = centroid_tools.convolve_peaks(data, threshold = 14, std=2.5)
+
 def get_peaks(image, threshold):
     peak_x_values = []
     peak_y_values = []
